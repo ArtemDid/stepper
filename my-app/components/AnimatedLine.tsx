@@ -1,20 +1,28 @@
-import Animated, {SharedValue, useAnimatedStyle} from "react-native-reanimated";
-import React from "react";
-import {StyleSheet} from "react-native";
+import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import React from 'react';
+import { StyleSheet } from 'react-native';
+import {COLORS} from "@/constants/Colors";
 
-export const AnimatedLine = ({ progress }: { progress: SharedValue<number> }) => {
+interface AnimatedLineProps {
+  progress: SharedValue<number>;
+  maxHeight: number;
+  style?: any;
+}
+
+export const AnimatedLine: React.FC<AnimatedLineProps> = ({ progress, maxHeight, style }) => {
   const animatedStyle = useAnimatedStyle(() => ({
-    height: progress.value * 90,
+    height: progress.value * maxHeight,
   }));
 
-  return <Animated.View style={[styles.animatedLine, animatedStyle]} />;
+  return <Animated.View style={[styles.animatedLine, animatedStyle, style]} />;
 };
-
 
 const styles = StyleSheet.create({
   animatedLine: {
     position: 'absolute',
-    width: '100%',
-    backgroundColor: '#f97316',
+    width: 4,
+    backgroundColor: COLORS.PRIMARY,
+    left: '50%',
+    transform: [{ translateX: -2 }],
   },
-})
+});

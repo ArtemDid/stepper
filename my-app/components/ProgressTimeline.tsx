@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { useSharedValue, withTiming} from 'react-native-reanimated';
-import {AnimatedLine} from "@/components/AnimatedLine";
-import {STATUS, Step} from "@/app/(tabs)";
-import {COLORS} from "@/constants/Colors";
+import { useSharedValue, withTiming, useAnimatedStyle } from 'react-native-reanimated';
+import { AnimatedLine } from '@/components/AnimatedLine';
+import { STATUS, Step } from '@/app/(tabs)';
+import { COLORS } from '@/constants/Colors';
+import { Ionicons } from '@expo/vector-icons';
 
 interface ProgressTimelineProps {
   steps: Step[];
@@ -11,7 +12,9 @@ interface ProgressTimelineProps {
 
 const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ steps: initialSteps }) => {
   const [steps, setSteps] = useState<Step[]>(initialSteps);
-  const lineProgress = steps.map(() => useSharedValue(0));
+  const [isCollapsed, setIsCollapsed] = useState(true);
+
+  const lineProgress = steps.map(() => useSharedValue(0)); // Shared values для анимации линий
 
   const handleStepPress = (pressedIndex: number) => {
     const updatedSteps: Step[] = steps.map((step, index) => {
@@ -31,39 +34,75 @@ const ProgressTimeline: React.FC<ProgressTimelineProps> = ({ steps: initialSteps
     });
   };
 
+  const toggleFirstStepCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+
+    lineProgress[0].value = withTiming(isCollapsed ? 3 : 1, { duration: 500 });
+  };
+
   const renderStep = ({ item, index }: { item: Step; index: number }) => {
     const isDone = item.status === STATUS.DONE;
     const isInProgress = item.status === STATUS.IN_PROGRESS;
+
+    const maxHeight = index === 0 && !isCollapsed ? 150 : 90;
 
     return (
       <>
         {index < steps.length - 1 && (
           <View style={styles.lineContainer}>
-            <AnimatedLine progress={lineProgress[index]} />
+            <AnimatedLine progress={lineProgress[index]} maxHeight={maxHeight} />
           </View>
         )}
 
-        <TouchableOpacity onPress={() => handleStepPress(index)} style={styles.stepContainer}>
-          <View
-            style={[
-              styles.circle,
-              isDone && styles.circleDone,
-              isInProgress && styles.circleInProgress,
-            ]}
-          >
-            {isDone ? <Text style={styles.checkmark}>✔</Text> : <Text style={styles.stepText}>{item.id}</Text>}
+          <View style={styles.stepContainer}>
+            <TouchableOpacity onPress={() => handleStepPress(index)} style={styles.stepRow}>
+              <View
+                style={[
+                  styles.circle,
+                  isDone && styles.circleDone,
+                  isInProgress && styles.circleInProgress,
+                ]}
+              >
+                {isDone ? (
+                  <Text style={styles.checkmark}>✔</Text>
+                ) : (
+                  <Text style={styles.stepText}>{item.id}</Text>
+                )}
+              </View>
+
+              <Text
+                style={[
+                  styles.stepTitle,
+                  isDone && styles.titleDone,
+                  isInProgress && styles.titleInProgress,
+                ]}
+              >
+                {item.title}
+
+
+              {index === 0 && (
+                <TouchableOpacity onPress={toggleFirstStepCollapse} style={styles.arrowContainer}>
+                  <Ionicons
+                    name={isCollapsed ? 'chevron-down' : 'chevron-up'}
+                    size={20}
+                    color={COLORS.PRIMARY}
+                  />
+                </TouchableOpacity>
+              )}
+              </Text>
+            </TouchableOpacity>
           </View>
 
-        <Text
-          style={[
-            styles.stepTitle,
-            isDone && styles.titleDone,
-            isInProgress && styles.titleInProgress,
-          ]}
-        >
-          {item.title}
-        </Text>
-        </TouchableOpacity>
+        {index === 0 && !isCollapsed && (
+          <View style={styles.collapsedContent}>
+            <Text style={styles.collapseText}>Number of floors entirely below ground level:</Text>
+            <Text style={styles.collapseText}>YOUR ANSWER</Text>
+            <Text style={styles.collapseText}>ANSWER</Text>
+            <Text style={styles.collapseText}>Floors on which car parking is provided:</Text>
+            <Text style={styles.collapseText}>YOUR ANSWER</Text>
+            <Text style={styles.collapseText}>ANSWER</Text>
+          </View>
+        )}
       </>
     );
   };
@@ -86,12 +125,11 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    marginVertical: '50%',
+    marginVertical: '10%',
   },
   stepContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    position: 'relative',
     marginBottom: 50,
   },
   lineContainer: {
@@ -113,7 +151,6 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.TEXT_DEFAULT,
     alignItems: 'center',
     justifyContent: 'center',
-    zIndex: 1,
   },
   circleDone: {
     backgroundColor: COLORS.PRIMARY,
@@ -135,6 +172,7 @@ const styles = StyleSheet.create({
     marginLeft: 15,
     fontSize: 16,
     color: COLORS.TEXT_DEFAULT,
+    flex: 1,
   },
   titleDone: {
     color: COLORS.PRIMARY,
@@ -142,5 +180,22 @@ const styles = StyleSheet.create({
   },
   titleInProgress: {
     color: COLORS.PRIMARY,
+  },
+  collapsedContent: {
+    marginLeft: 55,
+    marginTop: 10,
+  },
+  collapseText: {
+    color: COLORS.WHITE,
+    marginBottom: 5,
+  },
+  stepRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+  },
+  arrowContainer: {
+    marginLeft: 10,
   },
 });
